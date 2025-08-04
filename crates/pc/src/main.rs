@@ -2,6 +2,9 @@ use anyhow::{Result, anyhow};
 use std::time::{Duration, Instant};
 use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect};
 
+mod menu;
+use menu::{show_main_menu, show_victory_screen};
+
 use raycaster_engine::{
     Map, Player,
     raycast::cast_frame,
@@ -32,16 +35,16 @@ fn main() -> Result<()> {
     let mut event_pump = sdl.event_pump().map_err(|e| anyhow!(e))?;
     sdl.mouse().set_relative_mouse_mode(true);
 
-    // ------ Load level ------
-    let args: Vec<String> = std::env::args().collect();
-    let level_path = args.get(1).cloned().unwrap_or_else(|| "levels/level1.map".to_string());
-    let map = Map::load_from_file(&level_path)?;
-    let mut player = Player::new(2.5, 2.5);
+    // ------ Menú principal y carga de mapa ------
+    let level = show_main_menu(&mut canvas, &mut event_pump);
+    let map_path = format!("levels/level{}.map", level);
+    let map = Map::load_from_file(&map_path)?;
+    let mut player = Player::new(2.5, 2.5); // Cambia si tu nivel inicia en otra posición
 
     // ------ Framebuffer ------
     let mut fb = vec![0u32; SW * SH];
 
-    // ------ Loop ------
+    // ------ Loop principal ------
     let mut last = Instant::now();
     let mut fps_timer = Instant::now();
     let mut frames = 0u32;
@@ -56,13 +59,11 @@ fn main() -> Result<()> {
         let mut strafe = 0.0f32;
         let mut yaw = 0.0f32;
 
+        // Eventos
         for e in event_pump.poll_iter() {
             match e {
-                Event::Quit { .. } => break 'running,
-                Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => break 'running,
+                Event::Quit { .. }
+                | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
                 Event::MouseMotion { xrel, .. } => {
                     yaw += (xrel as f32) * 0.003;
                 }
@@ -70,12 +71,10 @@ fn main() -> Result<()> {
             }
         }
 
-        // Teclado
+        // Controles
         let kb = event_pump.keyboard_state();
         if kb.is_scancode_pressed(sdl2::keyboard::Scancode::W) {
             forward += 1.0;
-            println!("Moving forward: {}", forward);
-
         }
         if kb.is_scancode_pressed(sdl2::keyboard::Scancode::S) {
             forward -= 1.0;
@@ -86,8 +85,6 @@ fn main() -> Result<()> {
         if kb.is_scancode_pressed(sdl2::keyboard::Scancode::D) {
             strafe += 1.0;
         }
-
-
         if kb.is_scancode_pressed(sdl2::keyboard::Scancode::Left) {
             yaw -= 1.8 * dt;
         }
@@ -95,25 +92,10 @@ fn main() -> Result<()> {
             yaw += 1.8 * dt;
         }
 
-        for e in event_pump.poll_iter() {
-            println!("{:?}", e); // ← añade esta línea
-
-            match e {
-                Event::Quit{..} => break 'running,
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'running,
-                Event::MouseMotion { xrel, .. } => {
-                    yaw += (xrel as f32) * 0.003;
-                }
-                _ => {}
-            }
-        }
-
-        
-
         player.rotate(yaw);
         player.step(&map, forward, strafe, dt);
 
-        // Clear (cielo/piso)
+        // Cielo y piso
         let sky = 0xFF6EA6FFu32;
         let floor = 0xFF444444u32;
         for y in 0..SH {
@@ -124,7 +106,7 @@ fn main() -> Result<()> {
             }
         }
 
-        // Raycast walls
+        // Raycasting
         let cols = cast_frame(SW, SH, player.pos, player.dir, player.plane, &map);
         for c in cols {
             let dark = c.side == 1;
@@ -145,7 +127,17 @@ fn main() -> Result<()> {
         }
         draw_fps_rgba(&mut fb, SW, SH, fps);
 
-        // Present
+        // Verificar victoria
+        if let Some((gx, gy)) = map.goal {
+            let px = player.pos.x as i32;
+            let py = player.pos.y as i32;
+            if px == gx && py == gy {
+                show_victory_screen(&mut canvas, &mut event_pump);
+                break 'running;
+            }
+        }
+
+        // Render final
         tex.with_lock(None, |bytes, pitch| {
             for y in 0..SH {
                 let src = &fb[y * SW..(y + 1) * SW];
