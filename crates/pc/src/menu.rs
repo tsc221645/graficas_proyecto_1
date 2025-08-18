@@ -1,4 +1,5 @@
 use std::fs;
+use std::time::Duration;
 use sdl2::{
     event::Event,
     keyboard::Keycode,
@@ -8,6 +9,7 @@ use sdl2::{
     ttf::Font,
     video::{Window, WindowContext},
     EventPump,
+
 };
 
 /// Menú principal: muestra niveles disponibles y permite seleccionar uno
@@ -84,22 +86,45 @@ pub fn show_main_menu(
 /// Pantalla de victoria
 pub fn show_victory_screen(
     canvas: &mut Canvas<Window>,
-    event_pump: &mut EventPump,
-) {
-    canvas.set_draw_color(Color::RGB(0, 0, 0));
-    canvas.clear();
-    canvas.set_draw_color(Color::RGB(0, 255, 0));
-    canvas.fill_rect(Rect::new(100, 200, 760, 100)).ok();
-    canvas.present();
+    texture_creator: &TextureCreator<WindowContext>,
+    font: &Font,
+    event_pump: &mut sdl2::EventPump,
+) -> bool {
+    use sdl2::render::Texture;
+    use sdl2::render::TextureQuery;
 
-    'wait: loop {
+    let message = "¡Felicidades, ganaste!";
+    let prompt = "Presiona ENTER para volver al menú o ESC para salir";
+
+    let surface = font.render(message).blended(Color::RGB(255, 255, 255)).unwrap();
+    let texture: Texture = texture_creator.create_texture_from_surface(&surface).unwrap();
+    let TextureQuery { width, height, .. } = texture.query();
+
+    let prompt_surface = font.render(prompt).blended(Color::RGB(200, 200, 200)).unwrap();
+    let prompt_texture = texture_creator.create_texture_from_surface(&prompt_surface).unwrap();
+    let prompt_query = prompt_texture.query();
+
+    // Bucle de espera hasta que se presione ENTER o ESC
+    loop {
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.clear();
+        canvas.copy(&texture, None, Some(Rect::new(200, 200, width, height))).unwrap();
+        canvas.copy(&prompt_texture, None, Some(Rect::new(100, 300, prompt_query.width, prompt_query.height))).unwrap();
+        canvas.present();
+
         for event in event_pump.poll_iter() {
             match event {
+                Event::KeyDown { keycode: Some(Keycode::Return), .. } => {
+                    return true;
+                }
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } |
-                Event::Quit { .. } => break 'wait,
+                Event::Quit { .. } => {
+                    return false;
+                }
                 _ => {}
             }
         }
-        std::thread::sleep(std::time::Duration::from_millis(50));
+
+        std::thread::sleep(Duration::from_millis(100));
     }
 }
