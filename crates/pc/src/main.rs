@@ -19,6 +19,7 @@ fn main() -> Result<()> {
     // ------ SDL init ------
     let sdl = sdl2::init().map_err(|e| anyhow!(e))?;
     let video = sdl.video().map_err(|e| anyhow!(e))?;
+    let ttf_context = sdl2::ttf::init().map_err(|e| anyhow!(e))?; // ✅ FIX: estaba faltando
     let window = video.window("Raycaster PC", SW as u32, SH as u32)
         .position_centered()
         .build()
@@ -35,10 +36,17 @@ fn main() -> Result<()> {
     let mut event_pump = sdl.event_pump().map_err(|e| anyhow!(e))?;
     sdl.mouse().set_relative_mouse_mode(true);
 
+    let font = ttf_context
+    .load_font("assets/font.ttf", 32)
+    .map_err(|e| anyhow!(e))?;
+
+
     // ------ Menú principal y carga de mapa ------
-    let level = show_main_menu(&mut canvas, &mut event_pump);
-    let map_path = format!("levels/level{}.map", level);
-    let map = Map::load_from_file(&map_path)?;
+    let selected_level = match show_main_menu(&mut canvas, &texture_creator, &font, &mut event_pump) {
+        Some(path) => path,
+        None => return Ok(()), 
+    };
+    let map = Map::load_from_file(&selected_level)?; 
     let mut player = Player::new(2.5, 2.5); // Cambia si tu nivel inicia en otra posición
 
     // ------ Framebuffer ------
@@ -58,6 +66,8 @@ fn main() -> Result<()> {
         let mut forward = 0.0f32;
         let mut strafe = 0.0f32;
         let mut yaw = 0.0f32;
+
+        println!("Jugador en: ({:.2}, {:.2})", player.pos.x, player.pos.y);
 
         // Eventos
         for e in event_pump.poll_iter() {
