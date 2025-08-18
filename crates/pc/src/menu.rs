@@ -35,27 +35,27 @@ pub fn show_main_menu(
     let mut selected = 0;
 
     loop {
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.set_draw_color(Color::RGB(27, 67, 50));
         canvas.clear();
 
         // Título
         let title_surface = font
             .render("Monkey's Maze")
-            .blended(Color::RGB(255, 255, 0))
+            .blended(Color::RGB(255, 214, 10))
             .unwrap();
         let title_texture = texture_creator.create_texture_from_surface(&title_surface).unwrap();
-        canvas.copy(&title_texture, None, Some(Rect::new(250, 50, 300, 50))).unwrap();
+        canvas.copy(&title_texture, None, Some(Rect::new(320, 70, 300, 50))).unwrap();
 
         // Niveles
         for (i, level) in levels.iter().enumerate() {
             let color = if i == selected {
-                Color::RGB(0, 255, 0)
+                Color::RGB(64, 145, 108)
             } else {
-                Color::RGB(255, 255, 255)
+                Color::RGB(202, 210, 197)
             };
             let surface = font.render(level).blended(color).unwrap();
             let texture = texture_creator.create_texture_from_surface(&surface).unwrap();
-            canvas.copy(&texture, None, Some(Rect::new(280, 150 + (i as i32) * 40, 300, 40))).unwrap();
+            canvas.copy(&texture, None, Some(Rect::new(320, 180 + (i as i32) * 40, 300, 40))).unwrap();
         }
 
         canvas.present();

@@ -1,6 +1,10 @@
 use anyhow::{Result, anyhow};
 use std::time::{Duration, Instant};
 use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect};
+use sdl2::mixer::{self, InitFlag, Music, AUDIO_S16LSB, DEFAULT_CHANNELS};
+
+// Inicializar el mixer con soporte MP3
+
 
 mod menu;
 use menu::{show_main_menu, show_victory_screen};
@@ -39,6 +43,20 @@ fn main() -> Result<()> {
     let font = ttf_context
         .load_font("assets/font.ttf", 32)
         .map_err(|e| anyhow!(e))?;
+
+    
+
+    
+    mixer::init(InitFlag::MP3);
+
+    mixer::open_audio(44_100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024)
+        .map_err(|e| anyhow!(e))?;
+    mixer::allocate_channels(4);
+
+    let music = Music::from_file("assets/music/Jungle.mp3")
+        .map_err(|e| anyhow!(e))?;
+    music.play(-1).map_err(|e| anyhow!(e))?;
+
 
     // ------ Game loop ------
     'game: loop {
