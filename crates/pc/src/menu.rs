@@ -92,35 +92,67 @@ pub fn show_victory_screen(
 ) -> bool {
     use sdl2::render::Texture;
     use sdl2::render::TextureQuery;
+    use std::time::Duration;
 
     let message = "¡Felicidades, ganaste!";
     let prompt = "Presiona ENTER para volver al menú o ESC para salir";
 
-    let surface = font.render(message).blended(Color::RGB(255, 255, 255)).unwrap();
-    let texture: Texture = texture_creator.create_texture_from_surface(&surface).unwrap();
-    let TextureQuery { width, height, .. } = texture.query();
+    let surface = font
+        .render(message)
+        .blended(Color::RGB(255, 255, 0)) // Amarillo brillante
+        .unwrap();
+    let texture: Texture = texture_creator
+        .create_texture_from_surface(&surface)
+        .unwrap();
+    let TextureQuery { width: msg_width, height: msg_height, .. } = texture.query();
 
-    let prompt_surface = font.render(prompt).blended(Color::RGB(200, 200, 200)).unwrap();
-    let prompt_texture = texture_creator.create_texture_from_surface(&prompt_surface).unwrap();
-    let prompt_query = prompt_texture.query();
+    let prompt_surface = font
+        .render(prompt)
+        .blended(Color::RGB(0, 255, 0)) // Verde
+        .unwrap();
+    let prompt_texture = texture_creator
+        .create_texture_from_surface(&prompt_surface)
+        .unwrap();
+    let TextureQuery { width: prompt_width, height: prompt_height, .. } = prompt_texture.query();
 
-    // Bucle de espera hasta que se presione ENTER o ESC
+    // Cargar imagen del monito feliz
+    let monkey_texture = sdl2::image::LoadTexture::load_texture(
+        texture_creator,
+        "assets/images/happy_monkey.png",
+    )
+    .expect("No se pudo cargar la imagen de la pantalla de victoria");
+    let monkey_query = monkey_texture.query();
+
+    let win_size = canvas.output_size().unwrap();
+    let win_width = win_size.0;
+    let win_height = win_size.1;
+
+    // Posiciones centradas
+    let msg_x = ((win_width - msg_width) / 2) as i32;
+    let prompt_x = ((win_width - prompt_width) / 2) as i32;
+    let monkey_dest = Rect::new(
+        220 as i32, // Centrado horizontal
+        0,                            // Altura
+        540,
+        540,
+    );
+
     loop {
-        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.set_draw_color(Color::RGB(20, 40, 20)); // Fondo jungla
         canvas.clear();
-        canvas.copy(&texture, None, Some(Rect::new(200, 200, width, height))).unwrap();
-        canvas.copy(&prompt_texture, None, Some(Rect::new(100, 300, prompt_query.width, prompt_query.height))).unwrap();
+
+        // Mostrar imagen y textos centrados
+        canvas.copy(&monkey_texture, None, Some(monkey_dest)).unwrap();
+        //canvas.copy(&texture, None, Some(Rect::new(msg_x, 180, msg_width, msg_height))).unwrap();
+        //canvas.copy(&prompt_texture, None, Some(Rect::new(prompt_x, 250, prompt_width, prompt_height))).unwrap();
+
         canvas.present();
 
         for event in event_pump.poll_iter() {
             match event {
-                Event::KeyDown { keycode: Some(Keycode::Return), .. } => {
-                    return true;
-                }
+                Event::KeyDown { keycode: Some(Keycode::Return), .. } => return true,
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } |
-                Event::Quit { .. } => {
-                    return false;
-                }
+                Event::Quit { .. } => return false,
                 _ => {}
             }
         }
