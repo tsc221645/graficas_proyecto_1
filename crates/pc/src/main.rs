@@ -88,6 +88,27 @@ fn main() -> Result<()> {
             Some(path) => path,
             None => return Ok(()),
         };
+
+        let music_path = if selected_level.contains("banana_land") {
+            "assets/music/Jungle.mp3"
+        } else if selected_level.contains("deep_jungle") {
+            "assets/music/monkeys.mp3"
+        } else if selected_level.contains("the_cave") {
+            "assets/music/Tropical Adventure.mp3"
+        } 
+        else if selected_level.contains("taylors_special") {
+            "assets/music/shakeitoff.mp3"
+        } else {
+            "assets/music/Jungle.mp3"
+        };
+
+        // Detener cualquier música anterior
+        mixer::Music::halt();
+
+        // Cargar y reproducir la nueva música
+        let music = Music::from_file(music_path).map_err(|e| anyhow!(e))?;
+        music.play(-1).map_err(|e| anyhow!(e))?;
+
         let map = Map::load_from_file(&selected_level)?;
         let mut player = Player::new(2.5, 2.5);
         let mut fb = vec![0u32; SW * SH];
@@ -142,7 +163,7 @@ fn main() -> Result<()> {
 
             player.step(&map, forward, strafe, dt);
 
-            // 🏁 Verificar victoria
+            
             if let Some((gx, gy)) = map.goal {
                 let px = player.pos.x as i32;
                 let py = player.pos.y as i32;
@@ -158,9 +179,8 @@ fn main() -> Result<()> {
 
             
 
-            // Cielo y piso
-            let sky = 0xFF6EA6FFu32;
-            let floor = 0xFF444444u32;
+            let sky = 0xFFE6D63Eu32;     // Celeste
+            let floor = 0xFF0C374Au32;  
             for y in 0..SH {
                 let c = if y < SH / 2 { sky } else { floor };
                 let row = &mut fb[y * SW..(y + 1) * SW];
@@ -174,6 +194,11 @@ fn main() -> Result<()> {
                 1 => (45, 128, 60),   // verde
                 2 => (23, 42, 56),  // naranja
                 3 => (56, 42, 23),    // marrón
+                4 => (18, 77, 22),
+                5 => (95, 97, 96),
+                6 => (56, 42, 23),
+                7 => (56, 42, 23),
+                8 => (56, 42, 23),
                 _ => (80, 80, 80),    // gris por defecto
             };
 
