@@ -19,6 +19,29 @@ use raycaster_engine::{
 const SW: usize = 960;
 const SH: usize = 540;
 
+
+/// Devuelve el color RGBA sombreado según distancia
+pub fn wall_color_shaded_rgba(wall_id: u8, distance: f32) -> u32 {
+    // Colores base por tipo de muro
+    let (r, g, b) = match wall_id {
+        1 => (45, 128, 60),   // verde
+        2 => (194, 124, 29),  // naranja
+        3 => (56, 42, 23),    // marrón
+        _ => (160, 160, 160), // gris claro por defecto
+    };
+
+    // Cálculo de shading (más lejos → más oscuro)
+    let distance = distance.clamp(0.0, 10.0);
+    let factor = 1.0 - (distance / 10.0); // cerca=1.0, lejos=0.0
+
+    let r = (r as f32 * factor).round() as u8;
+    let g = (g as f32 * factor).round() as u8;
+    let b = (b as f32 * factor).round() as u8;
+
+    (0xFF << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
+}
+
+
 fn main() -> Result<()> {
     // ------ SDL init ------
     let sdl = sdl2::init().map_err(|e| anyhow!(e))?;
@@ -133,6 +156,8 @@ fn main() -> Result<()> {
                 }
             }
 
+            
+
             // Cielo y piso
             let sky = 0xFF6EA6FFu32;
             let floor = 0xFF444444u32;
@@ -144,15 +169,60 @@ fn main() -> Result<()> {
                 }
             }
 
-            // Raycasting
+            pub fn wall_color_rgba(wall_id: u8, dark: bool) -> u32 {
+            let (r, g, b) = match wall_id {
+                1 => (45, 128, 60),   // verde
+                2 => (23, 42, 56),  // naranja
+                3 => (56, 42, 23),    // marrón
+                _ => (80, 80, 80),    // gris por defecto
+            };
+
+            let (r, g, b) = if dark {
+                (r / 2, g / 2, b / 2)
+            } else {
+                (r, g, b)
+            };
+
+                rgb(r, g, b)
+            }
+
+            pub fn rgb(r: u8, g: u8, b: u8) -> u32 {
+                (0xFF << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
+            }
+
+
+            /* Raycasting
+            pub fn wall_color_rgba(wall_id: u8, dark: bool) -> u32 {
+                let base_color = match wall_id {
+                    1 => 0xFF2D803C, // rojo
+                    2 => 0xC27C1D, // verde
+                    3 => 0xFF382A17, // azul
+                    _ => 0xFF2D803C, // blanco por defecto
+                };
+
+                if !dark {
+                    return base_color;
+                }
+
+                // Aplica sombra multiplicando RGB por 0.5
+                let r = ((base_color >> 16) & 0xFF) / 2;
+                let g = ((base_color >> 8) & 0xFF) / 2;
+                let b = (base_color & 0xFF) / 2;
+
+                (0xFF << 24) | (r << 16) | (g << 8) | b
+            }
+            */
             let cols = cast_frame(SW, SH, player.pos, player.dir, player.plane, &map);
             for c in cols {
-                let dark = c.side == 1;
-                let color = wall_color_rgba(c.wall, dark);
+                let color = wall_color_shaded_rgba(c.wall, c.perp);
+
                 for y in c.y0 as usize..=c.y1 as usize {
                     fb[y * SW + c.x] = color;
                 }
             }
+
+
+
 
             // UI
             draw_minimap_rgba(&mut fb, SW, SH, &map, player.pos.x, player.pos.y);
