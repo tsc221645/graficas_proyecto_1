@@ -17,5 +17,5 @@ Ana Laura Tschen 221645
 ![Pantalla final](image-1.png)
 
 ### Créditos
-![Musica de fondo](https://opengameart.org/content/jungle-jumpin)
-![Texturas]()
+[Musica de fondo](https://opengameart.org/content/jungle-jumpin)
+[Texturas]()
