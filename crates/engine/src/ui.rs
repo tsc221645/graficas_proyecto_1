@@ -8,16 +8,28 @@ pub fn draw_minimap_rgba(buf: &mut [u32], sw: usize, sh: usize, map: &Map, px: f
     let off_x = sw.saturating_sub(mw + 8);
     let off_y = 8usize;
 
-    let wall_color = 0xFFFF4444;   // Rojo fuerte para muros
-    let floor_color = 0xFF222222;  // Gris oscuro para espacios vacíos
-    let player_color = 0xFF00FFFF; // Cyan para el jugador
-    let player_size = 3usize;      // Tamaño del cuadro del jugador
+    let wall_color = 0xFF222222u32;     // Paredes normales (gris oscuro)
+    let floor_color = 0xFFFF4444u32;    // Piso (rojo)
+    let player_color = 0xFF0000FFu32;   // Jugador (azul)
+    let special_color = 0xFF0000FFu32;  // Celdas 9 (verde brillante)
+    let player_size = 3usize;
 
-    // Dibujar el mapa
+
+    
     for my in 0..map.h as usize {
         for mx in 0..map.w as usize {
             let id = map.cells[my * map.w as usize + mx];
-            let c = if id > 0 { wall_color } else { floor_color };
+
+            // Color según tipo de celda
+            let c = if id > 0 {
+                wall_color
+            } else if id == 9 {
+                special_color
+            } else {
+                floor_color
+            };
+
+            // Dibuja el píxel ampliado según escala
             for dy in 0..scale {
                 for dx in 0..scale {
                     let x = off_x + mx * scale + dx;
@@ -29,6 +41,7 @@ pub fn draw_minimap_rgba(buf: &mut [u32], sw: usize, sh: usize, map: &Map, px: f
             }
         }
     }
+
 
     // Dibujar al jugador
     let jx = off_x + (px as usize) * scale;

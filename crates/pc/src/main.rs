@@ -28,12 +28,12 @@ fn get_level_colors(level_name: &str) -> LevelColors {
     let mut wall_colors = HashMap::new();
 
     if level_name.contains("banana_land") {
-        wall_colors.insert(1, (45, 128, 60));
-        wall_colors.insert(2, (194, 124, 29));
-        wall_colors.insert(3, (56, 42, 23));
+        wall_colors.insert(1, (0, 200, 214));
+        wall_colors.insert(2, (44, 168, 7));
+        wall_colors.insert(3, (34, 155, 163));
         LevelColors {
-            sky: (255, 210, 127),
-            floor: (74, 55, 12),
+            sky: (121, 201, 104),
+            floor: (3, 134, 173),
             wall_colors,
         }
     } 
@@ -48,32 +48,32 @@ fn get_level_colors(level_name: &str) -> LevelColors {
         }
     }
     else if level_name.contains("taylors_special") {
-        wall_colors.insert(1, (218, 165, 32));
-        wall_colors.insert(2, (139, 69, 19));
-        wall_colors.insert(3, (205, 133, 63));
+        wall_colors.insert(1, (194, 126, 207));
+        wall_colors.insert(2, (207, 126, 162));
+        wall_colors.insert(3, (158, 85, 151));
         LevelColors {
-            sky: (255, 210, 127),
-            floor: (184, 134, 11),
+            sky: (255, 240, 153),
+            floor: (89, 18, 102),
             wall_colors,
         }
     }
     else if level_name.contains("deep_jungle") {
-        wall_colors.insert(1, (218, 165, 32));
-        wall_colors.insert(2, (139, 69, 19));
-        wall_colors.insert(3, (205, 133, 63));
+        wall_colors.insert(1, (12, 102, 27));
+        wall_colors.insert(2, (16, 38, 54));
+        wall_colors.insert(3, (82, 82, 82));
         LevelColors {
-            sky: (255, 210, 127),
-            floor: (184, 134, 11),
+            sky: (64, 11, 11),
+            floor: (18, 54, 21),
             wall_colors,
         }
     }
     else if level_name.contains("monkey_temple") {
-        wall_colors.insert(1, (218, 165, 32));
-        wall_colors.insert(2, (139, 69, 19));
-        wall_colors.insert(3, (205, 133, 63));
+        wall_colors.insert(1, (110, 110, 110));
+        wall_colors.insert(2, (78, 110, 109));
+        wall_colors.insert(3, (101, 142, 156));
         LevelColors {
-            sky: (255, 210, 127),
-            floor: (184, 134, 11),
+            sky: (189, 146, 77),
+            floor: (82, 182, 82),
             wall_colors,
         }
     }
