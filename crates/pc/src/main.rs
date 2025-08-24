@@ -2,7 +2,7 @@
 use anyhow::{Result, anyhow};
 use std::time::{Duration, Instant};
 use sdl2::{event::Event, keyboard::Keycode, pixels::PixelFormatEnum, rect::Rect};
-use sdl2::mixer::{self, InitFlag, Music, AUDIO_S16LSB, DEFAULT_CHANNELS};
+use sdl2::mixer::{self, InitFlag, Music, AUDIO_S16LSB, DEFAULT_CHANNELS,Chunk, Channel};
 use std::collections::HashMap;
 
 mod menu;
@@ -119,9 +119,21 @@ fn main() -> Result<()> {
     mixer::open_audio(44_100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).map_err(|e| anyhow!(e))?;
     mixer::allocate_channels(4);
 
+    let complete_level_sound = Chunk::from_file("assets/sfx/completedlevel.wav")
+    .map_err(|e| anyhow!("Error cargando completedlevel.wav: {e}"))?;
+    let walk_sound = Chunk::from_file("assets/sfx/minecraft-footsteps.mp3")
+    .map_err(|e| anyhow!("Error cargando walk.wav: {e}"))?;
+    let select_level_sound = Chunk::from_file("assets/sfx/selectlevel.wav")
+    .map_err(|e| anyhow!("Error cargando efecto select: {e}"))?;
+
     'game: loop {
         let selected_level = match show_main_menu(&mut canvas, &texture_creator, &font, &mut event_pump) {
-            Some(path) => path,
+            Some(path) => {
+                Channel::all().play(&select_level_sound, 0)
+                .map_err(|e| anyhow!("Error al reproducir efecto: {e}"))?;
+
+                path
+            },
             None => return Ok(()),
         };
 
@@ -138,6 +150,8 @@ fn main() -> Result<()> {
         } else {
             "assets/music/Jungle.mp3"
         };
+
+        
 
         mixer::Music::halt();
         let music = Music::from_file(music_path).map_err(|e| anyhow!(e))?;
@@ -169,42 +183,54 @@ fn main() -> Result<()> {
             gpad.update();
             let state = gpad.state();
 
-            // Movimiento con joystick izquierdo
-            let move_x = state.movement.0;
-            let move_y = state.movement.1;
-
-            // Rotación con joystick derecho
-            let rot = state.rotation;
-
-            // Aplicar movimiento (ajustado)
-            let speed = 0.08;
-            let rot_speed = 0.04;
-
-            player.pos.x += move_y * player.dir.x * speed;
-            player.pos.y += move_y * player.dir.y * speed;
-
-            player.pos.x += move_x * player.plane.x * speed;
-            player.pos.y += move_x * player.plane.y * speed;
-
-            player.rotate(rot * rot_speed);
-
+            // Inputs desde teclado
             let kb = event_pump.keyboard_state();
             let mut forward = 0.0;
             let mut strafe = 0.0;
-            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::W) { forward += 1.0; }
-            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::S) { forward -= 1.0; }
-            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::A) { strafe -= 1.0; }
-            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::D) { strafe += 1.0; }
+
+            let mut moved_keyboard = false;
+            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::W) { forward += 1.0; moved_keyboard = true; }
+            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::S) { forward -= 1.0; moved_keyboard = true; }
+            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::A) { strafe -= 1.0; moved_keyboard = true; }
+            if kb.is_scancode_pressed(sdl2::keyboard::Scancode::D) { strafe += 1.0; moved_keyboard = true; }
+
+            // Suma el movimiento del joystick izquierdo
+            let move_x = state.movement.0;
+            let move_y = state.movement.1;
+            forward += move_y;
+            strafe += move_x;
+
+            let moved_gamepad = move_x.abs() > 0.05 || move_y.abs() > 0.05;
+
+            // Si se movió por teclado o joystick, reproducir sonido
+            if (moved_keyboard || moved_gamepad) && !Channel(1).is_playing() {
+                Channel(1).play(&walk_sound, 0)
+                    .map_err(|e| anyhow!("Error reproduciendo walk.wav: {e}"))?;
+            }
+
+            // Aplica movimiento con colisiones
+            player.step(&map, forward, strafe, dt);
+
+
+            // Aplica rotación (joystick derecho y flechas)
             if kb.is_scancode_pressed(sdl2::keyboard::Scancode::Left) { player.rotate(-1.8 * dt); }
             if kb.is_scancode_pressed(sdl2::keyboard::Scancode::Right) { player.rotate(1.8 * dt); }
 
-            player.step(&map, forward, strafe, dt);
+            let rot = state.rotation;
+            player.rotate(rot * 0.04); // Ajusta sensibilidad si es necesario
+
+
+          
+            
+
 
             if let Some((gx, gy)) = map.goal {
                 let px = player.pos.x as i32;
                 let py = player.pos.y as i32;
                 if px == gx && py == gy {
                     let restart = show_victory_screen(&mut canvas, &texture_creator, &font, &mut event_pump);
+                    Channel::all().play(&complete_level_sound, 0)
+                    .map_err(|e| anyhow!("Error reproduciendo win.wav: {e}"))?;
                     if restart {
                         continue 'game;
                     } else {
