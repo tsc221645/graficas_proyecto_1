@@ -8,6 +8,9 @@ use std::collections::HashMap;
 mod menu;
 use menu::{show_main_menu, show_victory_screen};
 
+mod input;
+use input::gamepad::{GamepadHandler, GamepadState};
+
 use raycaster_engine::{
     Map, Player,
     raycast::cast_frame,
@@ -36,8 +39,7 @@ fn get_level_colors(level_name: &str) -> LevelColors {
             floor: (3, 134, 173),
             wall_colors,
         }
-    } 
-    else if level_name.contains("the_cave") {
+    } else if level_name.contains("the_cave") {
         wall_colors.insert(1, (87, 87, 87));
         wall_colors.insert(2, (74, 74, 74));
         wall_colors.insert(3, (68, 68, 68));
@@ -46,8 +48,7 @@ fn get_level_colors(level_name: &str) -> LevelColors {
             floor: (60, 60, 60),
             wall_colors,
         }
-    }
-    else if level_name.contains("taylors_special") {
+    } else if level_name.contains("taylors_special") {
         wall_colors.insert(1, (194, 126, 207));
         wall_colors.insert(2, (207, 126, 162));
         wall_colors.insert(3, (158, 85, 151));
@@ -56,8 +57,7 @@ fn get_level_colors(level_name: &str) -> LevelColors {
             floor: (89, 18, 102),
             wall_colors,
         }
-    }
-    else if level_name.contains("deep_jungle") {
+    } else if level_name.contains("deep_jungle") {
         wall_colors.insert(1, (12, 102, 27));
         wall_colors.insert(2, (16, 38, 54));
         wall_colors.insert(3, (82, 82, 82));
@@ -66,8 +66,7 @@ fn get_level_colors(level_name: &str) -> LevelColors {
             floor: (18, 54, 21),
             wall_colors,
         }
-    }
-    else if level_name.contains("monkey_temple") {
+    } else if level_name.contains("monkey_temple") {
         wall_colors.insert(1, (110, 110, 110));
         wall_colors.insert(2, (78, 110, 109));
         wall_colors.insert(3, (101, 142, 156));
@@ -76,9 +75,7 @@ fn get_level_colors(level_name: &str) -> LevelColors {
             floor: (82, 182, 82),
             wall_colors,
         }
-    }
-    
-    else {
+    } else {
         wall_colors.insert(1, (170, 170, 170));
         wall_colors.insert(2, (136, 136, 136));
         wall_colors.insert(3, (102, 102, 102));
@@ -114,6 +111,8 @@ fn main() -> Result<()> {
     let mut tex = texture_creator.create_texture_streaming(PixelFormatEnum::RGBA8888, SW as u32, SH as u32).map_err(|e| anyhow!(e))?;
     let mut event_pump = sdl.event_pump().map_err(|e| anyhow!(e))?;
     sdl.mouse().set_relative_mouse_mode(true);
+
+    let mut gamepad = GamepadHandler::new(&sdl);
 
     let font = ttf_context.load_font("assets/font.ttf", 32).map_err(|e| anyhow!(e))?;
     mixer::init(InitFlag::MP3);
@@ -165,6 +164,29 @@ fn main() -> Result<()> {
                     _ => {}
                 }
             }
+
+            let gpad = &mut gamepad;
+            gpad.update();
+            let state = gpad.state();
+
+            // Movimiento con joystick izquierdo
+            let move_x = state.movement.0;
+            let move_y = state.movement.1;
+
+            // Rotación con joystick derecho
+            let rot = state.rotation;
+
+            // Aplicar movimiento (ajustado)
+            let speed = 0.08;
+            let rot_speed = 0.04;
+
+            player.pos.x += move_y * player.dir.x * speed;
+            player.pos.y += move_y * player.dir.y * speed;
+
+            player.pos.x += move_x * player.plane.x * speed;
+            player.pos.y += move_x * player.plane.y * speed;
+
+            player.rotate(rot * rot_speed);
 
             let kb = event_pump.keyboard_state();
             let mut forward = 0.0;
