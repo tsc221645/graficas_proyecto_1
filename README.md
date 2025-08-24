@@ -20,12 +20,16 @@ Este proyecto consiste en un Ray Caster Simple utilizando Rust. El proyecto perm
     + *d*  - para moverse hacia la derecha
 + Para rotar la vista se pueden utilizar tanto las flechas de la derecha e izquiera y el mouse (solamente es rotación horizontal).
 
+### Link al demo del juego
++ [Link de Youtube](https://youtu.be/HDjWqsMVWtw)
+
+
 ### Screenshots
 ![Main menu picture](image.png)
-![Pantalla final](image-1.png)
+![Banana land level](image-1.png)
+![Monkey temple level](image-3.png)
+![Pantalla final](image-2.png)
 
-### Link al demo del juego
-+ [Link de Youtube]()
 
 ### Créditos
 + [Musica de fondo](https://opengameart.org/)
